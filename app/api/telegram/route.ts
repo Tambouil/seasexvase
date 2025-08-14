@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { canSendNotification, setNotificationSent } from './cooldown';
 
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
@@ -31,11 +32,21 @@ async function handleTelegramAlert() {
     
     console.log(`Current wind: ${windSpeedKnots} knots`);
     
-    // Vérifier si le vent est > 5 nœuds
-    if (windSpeedKnots <= 5) {
+    // Vérifier si le vent est > 15 nœuds
+    if (windSpeedKnots <= 15) {
       return NextResponse.json({ 
         message: 'Wind too low', 
         windSpeed: windSpeedKnots 
+      });
+    }
+
+    // Vérifier le cooldown anti-spam
+    const canSend = await canSendNotification();
+    if (!canSend) {
+      return NextResponse.json({
+        message: 'Notification cooldown active (4h)',
+        windSpeed: windSpeedKnots,
+        skipped: true
       });
     }
     
@@ -69,6 +80,9 @@ async function handleTelegramAlert() {
     }
     
     const result = await telegramResponse.json();
+    
+    // Marquer la notification comme envoyée pour le cooldown
+    await setNotificationSent();
     
     return NextResponse.json({
       message: 'Telegram alert sent',

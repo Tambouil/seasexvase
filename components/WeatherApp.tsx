@@ -235,7 +235,7 @@ export function WeatherApp() {
         <div className="text-center text-sm text-muted-foreground space-y-2">
           <p>Données en temps réel • Actualisation automatique toutes les 30 secondes</p>
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 max-w-md mx-auto">
-            <p className="text-blue-800 text-xs">📱 Alertes Telegram automatiques quand le vent &gt; 5 nœuds</p>
+            <p className="text-blue-800 text-xs">📱 Alertes Telegram automatiques quand le vent &gt; 15 nœuds</p>
           </div>
         </div>
       </div>
