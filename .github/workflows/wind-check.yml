@@ -1,0 +1,36 @@
+name: Wind Alert Check
+
+on:
+  schedule:
+    # Vérifier toutes les 30 minutes
+    - cron: '*/30 * * * *'
+  workflow_dispatch: # Permettre le déclenchement manuel
+
+jobs:
+  check-wind:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Check wind conditions
+        id: check-wind
+        run: |
+          # Récupérer les données météo
+          response=$(curl -s "https://www.meteolarochelle.fr/wdlchatel/clientraw.txt")
+          wind_speed=$(echo "$response" | cut -d' ' -f2)
+          
+          echo "Current wind speed: $wind_speed knots"
+          
+          # Vérifier si le vent > 5 nœuds
+          if (( $(echo "$wind_speed > 5" | bc -l) )); then
+            echo "should_notify=true" >> $GITHUB_OUTPUT
+            echo "Wind condition met: $wind_speed knots"
+          else
+            echo "should_notify=false" >> $GITHUB_OUTPUT
+            echo "Wind too low: $wind_speed knots"
+          fi
+
+      - name: Send Telegram alert if wind > 5 knots
+        if: steps.check-wind.outputs.should_notify == 'true'
+        run: |
+          curl -X POST "${{ secrets.VERCEL_PROJECT_URL }}/api/telegram" \
+            -H "Content-Type: application/json"
