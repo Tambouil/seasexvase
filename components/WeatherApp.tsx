@@ -2,6 +2,7 @@ import { WeatherCard } from '@/components/WeatherCard';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { useWeather } from '@/hooks/useWeather';
@@ -13,17 +14,28 @@ import {
   Droplets,
   Eye,
   RefreshCw,
-  Sun,
   Thermometer,
-  ToggleLeft,
-  ToggleRight,
   Wind,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export function WeatherApp() {
-  const { data, loading, error, refresh } = useWeather(30000);
+  const { data, loading, error, refresh } = useWeather(15000);
   const [useKnots, setUseKnots] = useState(true);
+  const [countdown, setCountdown] = useState(15);
+  
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          return 15;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    
+    return () => clearInterval(timer);
+  }, []);
 
   if (loading) {
     return (
@@ -104,15 +116,15 @@ export function WeatherApp() {
     );
   };
 
-  const getWindStrength = (speed: number) => {
-    // Using km/h as reference for wind strength categories
-    if (speed < 30) return { label: 'Faible', color: 'bg-green-500' };
-    if (speed < 50) return { label: 'Modéré', color: 'bg-yellow-500' };
-    if (speed < 70) return { label: 'Fort', color: 'bg-orange-500' };
-    return { label: 'Très fort', color: 'bg-red-500' };
+  const getWindStrength = (speedKnots: number) => {
+    // Using knots for wind strength categories based on marine scale
+    if (speedKnots < 31) return { label: 'Normal', color: 'bg-green-500' };
+    if (speedKnots < 41) return { label: 'Fort', color: 'bg-orange-500' };
+    if (speedKnots < 54) return { label: 'Violent', color: 'bg-red-500' };
+    return { label: 'Tempétueux', color: 'bg-purple-500' };
   };
 
-  const windStrength = getWindStrength(data.windSpeed);
+  const windStrength = getWindStrength(data.windSpeedKnots);
 
   const windSpeedDisplay = useKnots ? data.windSpeedKnots : data.windSpeed;
   const windGustDisplay = useKnots ? data.windGustKnots : data.windGust;
@@ -135,35 +147,101 @@ export function WeatherApp() {
               <Clock className="h-4 w-4" />
               <span className="text-sm">Mise à jour: {data.lastUpdate.toLocaleTimeString('fr-FR')}</span>
             </div>
+            
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <RefreshCw className="h-4 w-4" />
+              <span className="text-sm font-medium">Prochaine dans {countdown}s</span>
+            </div>
 
-            <Button onClick={() => setUseKnots(!useKnots)} variant="outline" size="sm" className="shadow-sm">
-              {useKnots ? <ToggleRight className="h-4 w-4 mr-2" /> : <ToggleLeft className="h-4 w-4 mr-2" />}
-              {useKnots ? 'Nœuds' : 'km/h'}
-            </Button>
-
-            <Button onClick={refresh} variant="outline" size="sm" className="shadow-sm">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Actualiser
-            </Button>
+            <div className="flex items-center gap-2 bg-white/80 backdrop-blur rounded-lg px-3 py-1.5 shadow-sm">
+              <span className="text-sm font-medium text-gray-700">km/h</span>
+              <Switch
+                checked={useKnots}
+                onCheckedChange={setUseKnots}
+                className="data-[state=checked]:bg-blue-600"
+              />
+              <span className="text-sm font-medium text-gray-700">kts</span>
+            </div>
           </div>
 
           <Separator className="max-w-md mx-auto" />
         </div>
 
-        {/* Current Temperature - Featured */}
+        {/* Wind Statistics - Primary Feature */}
         <div className="mb-8">
-          <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl p-8 text-white shadow-2xl">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-semibold mb-2">Température actuelle</h2>
-                <div className="text-6xl font-bold mb-2">{data.temperature.toFixed(1)}°</div>
-                <div className="flex items-center gap-4">
-                  <span className="text-blue-100">Min: {data.minTemperature.toFixed(1)}°C</span>
-                  <span className="text-blue-100">•</span>
-                  <span className="text-blue-100">Max: {data.maxTemperature.toFixed(1)}°C</span>
+          <div className="bg-gradient-to-r from-cyan-600 to-blue-700 rounded-2xl p-8 text-white shadow-2xl">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <Wind className="h-10 w-10" />
+                <h2 className="text-3xl font-bold">Conditions de Vent</h2>
+              </div>
+              <Badge className={`text-lg px-6 py-2 ${windStrength.color} text-white font-bold`}>
+                {windStrength.label}
+              </Badge>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Current Wind */}
+              <div className="bg-white/10 backdrop-blur rounded-xl p-6">
+                <div className="text-cyan-100 text-sm uppercase tracking-wide mb-2">Vent Actuel</div>
+                <div className="flex items-baseline gap-2">
+                  <div className="text-5xl font-bold">{windSpeedDisplay.toFixed(1)}</div>
+                  <div className="text-2xl">{windUnit}</div>
+                </div>
+                <div className="mt-3 text-xl font-semibold flex items-center gap-2">
+                  <div className="bg-white/20 rounded-lg px-3 py-1">{formatDirection(data.windDirection)}</div>
+                  <div>{data.windDirection.toFixed(0)}°</div>
                 </div>
               </div>
-              <Thermometer className="h-24 w-24 text-white opacity-20" />
+
+              {/* Gusts & Averages */}
+              <div className="bg-white/10 backdrop-blur rounded-xl p-6">
+                <div className="text-cyan-100 text-sm uppercase tracking-wide mb-2">Rafales & Moyennes</div>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-cyan-100">Rafales:</span>
+                    <span className="text-2xl font-bold">
+                      {windGustDisplay.toFixed(1)} {windUnit}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-cyan-100">Moy 1min:</span>
+                    <span className="text-xl font-semibold">
+                      {useKnots ? data.windAvg1MinKnots.toFixed(1) : data.windAvg1Min.toFixed(1)} {windUnit}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-cyan-100">Moy 10min:</span>
+                    <span className="text-xl font-semibold">
+                      {useKnots ? data.windAvg10MinKnots.toFixed(1) : data.windAvg10Min.toFixed(1)} {windUnit}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Daily Max */}
+              <div className="bg-orange-500/20 backdrop-blur rounded-xl p-6 border border-orange-400/30">
+                <div className="text-orange-100 text-sm uppercase tracking-wide mb-2">Maximum du Jour</div>
+                <div className="flex items-baseline gap-2">
+                  <div className="text-5xl font-bold text-orange-300">
+                    {useKnots ? data.windMaxDayKnots.toFixed(1) : data.windMaxDay.toFixed(1)}
+                  </div>
+                  <div className="text-2xl text-orange-300">{windUnit}</div>
+                </div>
+                {data.windMaxDayTime && <div className="mt-3 text-xl text-orange-200">à {data.windMaxDayTime}</div>}
+              </div>
+            </div>
+
+            {/* Beaufort Scale */}
+            <div className="mt-6 bg-white/10 backdrop-blur rounded-xl p-4">
+              <div className="text-2xl font-bold text-center">
+                Force {data.beaufortScale} - {data.beaufortDescription}
+              </div>
+              <div className="mt-2 text-center text-cyan-100">
+                {data.beaufortScale >= 6 && '⚠️ Conditions de navigation difficiles'}
+                {data.beaufortScale >= 4 && data.beaufortScale < 6 && '✅ Bonnes conditions de navigation'}
+                {data.beaufortScale < 4 && '💤 Vent faible pour la navigation'}
+              </div>
             </div>
           </div>
         </div>
@@ -199,23 +277,22 @@ export function WeatherApp() {
           />
 
           <WeatherCard
-            title="Vent"
-            value={windSpeedDisplay.toFixed(1)}
-            unit={windUnit}
+            title="Température"
+            value={data.temperature.toFixed(1)}
+            unit="°C"
             subtitle={
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="text-xs">
-                    {formatDirection(data.windDirection)} {data.windDirection.toFixed(0)}°
-                  </Badge>
-                  <Badge className={`text-xs text-white ${windStrength.color}`}>{windStrength.label}</Badge>
+              <div className="space-y-1">
+                <div className="flex justify-between text-sm">
+                  <span>Min:</span>
+                  <span className="font-medium">{data.minTemperature.toFixed(1)}°C</span>
                 </div>
-                <div className="text-xs text-muted-foreground">
-                  Rafales: {windGustDisplay.toFixed(1)} {windUnit}
+                <div className="flex justify-between text-sm">
+                  <span>Max:</span>
+                  <span className="font-medium">{data.maxTemperature.toFixed(1)}°C</span>
                 </div>
               </div>
             }
-            icon={<Wind className="text-gray-500" />}
+            icon={<Thermometer className="text-orange-500" />}
             className="hover:shadow-lg transition-shadow"
           />
 
@@ -232,25 +309,11 @@ export function WeatherApp() {
             icon={<CloudRain className="text-blue-400" />}
             className="hover:shadow-lg transition-shadow"
           />
-
-          <WeatherCard
-            title="Rayonnement solaire"
-            value={data.solarRadiation.toFixed(0)}
-            unit="W/m²"
-            subtitle={
-              <div className="space-y-1">
-                <div className="text-sm">Index UV: {data.uvIndex.toFixed(1)}</div>
-                <Progress value={Math.min(100, (data.solarRadiation / 1000) * 100)} className="w-full" />
-              </div>
-            }
-            icon={<Sun className="text-yellow-500" />}
-            className="hover:shadow-lg transition-shadow lg:col-span-2"
-          />
         </div>
 
         {/* Footer */}
         <div className="text-center text-sm text-muted-foreground space-y-2">
-          <p>Données en temps réel • Actualisation automatique toutes les 30 secondes</p>
+          <p>Données en temps réel • Actualisation automatique toutes les 15 secondes</p>
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 max-w-md mx-auto">
             <p className="text-blue-800 text-xs">📱 Alertes Telegram automatiques quand le vent &gt; 15 nœuds</p>
           </div>
