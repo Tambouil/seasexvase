@@ -1,4 +1,5 @@
 import { WeatherCard } from '@/components/WeatherCard';
+import { WindRose } from '@/components/WindRose';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -181,16 +182,19 @@ export function WeatherApp() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Current Wind */}
+              {/* Wind Rose */}
               <div className="bg-white/10 backdrop-blur rounded-xl p-6">
-                <div className="text-cyan-100 text-sm uppercase tracking-wide mb-2">Vent Actuel</div>
-                <div className="flex items-baseline gap-2">
-                  <div className="text-5xl font-bold">{windSpeedDisplay.toFixed(1)}</div>
-                  <div className="text-2xl">{windUnit}</div>
-                </div>
-                <div className="mt-3 text-xl font-semibold flex items-center gap-2">
-                  <div className="bg-white/20 rounded-lg px-3 py-1">{formatDirection(data.windDirection)}</div>
-                  <div>{data.windDirection.toFixed(0)}°</div>
+                <div className="text-cyan-100 text-sm uppercase tracking-wide mb-4 text-center">Direction du Vent</div>
+                <WindRose 
+                  direction={data.windDirection} 
+                  speed={windSpeedDisplay} 
+                  speedUnit={windUnit}
+                />
+                <div className="mt-4 text-center">
+                  <div className="text-xl font-semibold flex items-center justify-center gap-2">
+                    <div className="bg-white/20 rounded-lg px-3 py-1">{formatDirection(data.windDirection)}</div>
+                    <div>{data.windDirection.toFixed(0)}°</div>
+                  </div>
                 </div>
               </div>
 
@@ -198,6 +202,12 @@ export function WeatherApp() {
               <div className="bg-white/10 backdrop-blur rounded-xl p-6">
                 <div className="text-cyan-100 text-sm uppercase tracking-wide mb-2">Rafales & Moyennes</div>
                 <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-cyan-100">Vent actuel:</span>
+                    <span className="text-2xl font-bold text-cyan-300">
+                      {windSpeedDisplay.toFixed(1)} {windUnit}
+                    </span>
+                  </div>
                   <div className="flex justify-between items-center">
                     <span className="text-cyan-100">Rafales:</span>
                     <span className="text-2xl font-bold">
