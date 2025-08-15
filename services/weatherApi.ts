@@ -23,23 +23,26 @@ function parseWeatherData(data: RawWeatherData): WeatherData {
   const temperature = parseFloat(data[4]?.toString() || '0');
   const humidity = parseFloat(data[5]?.toString() || '0');
   const pressure = parseFloat(data[6]?.toString() || '0');
-  // Les données sont déjà en nœuds dans clientraw.txt
-  const windSpeedKnots = parseFloat(data[1]?.toString() || '0'); // knots
+  // Positions confirmées depuis ajaxWDwxChatelkts.js
+  const windSpeedKnots = parseFloat(data[2]?.toString() || '0'); // Position 2: Vent actuel
   const windSpeed = windSpeedKnots * 1.852; // Convert knots to km/h
-  const windDirection = parseFloat(data[3]?.toString() || '0');
-  const windGustKnots = parseFloat(data[2]?.toString() || '0'); // knots
+  const windDirection = parseFloat(data[3]?.toString() || '0'); // Position 3: Direction
+  const windGustKnots = parseFloat(data[140]?.toString() || '0'); // Position 140: Rafales actuelles
   const windGust = windGustKnots * 1.852; // Convert knots to km/h
   
   // Wind averages
-  const windAvg1MinKnots = parseFloat(data[113]?.toString() || windSpeedKnots.toString());
+  const windAvg1MinKnots = parseFloat(data[1]?.toString() || '0'); // Position 1: Moyenne 1 minute
   const windAvg1Min = windAvg1MinKnots * 1.852;
-  const windAvg10MinKnots = parseFloat(data[158]?.toString() || windSpeedKnots.toString());
+  const windAvg10MinKnots = parseFloat(data[158]?.toString() || '0'); // Position 158: Moyenne 10 minutes
   const windAvg10Min = windAvg10MinKnots * 1.852;
   
-  // Daily max wind
-  const windMaxDayKnots = parseFloat(data[71]?.toString() || '0');
+  // Max wind statistics
+  const windMaxDayKnots = parseFloat(data[71]?.toString() || '0'); // Max du jour
   const windMaxDay = windMaxDayKnots * 1.852;
   const windMaxDayTime = data[135]?.toString() || '';
+  
+  const windMax1HourKnots = parseFloat(data[133]?.toString() || '0'); // Max sur 1 heure
+  const windMax1Hour = windMax1HourKnots * 1.852;
   
   // Monthly and yearly max (these positions might need adjustment)
   const windMaxMonthKnots = parseFloat(data[133]?.toString() || '0');
@@ -81,6 +84,8 @@ function parseWeatherData(data: RawWeatherData): WeatherData {
     windMaxDay,
     windMaxDayKnots,
     windMaxDayTime,
+    windMax1Hour,
+    windMax1HourKnots,
     windMaxMonth,
     windMaxMonthKnots,
     windMaxYear,

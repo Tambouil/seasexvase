@@ -226,6 +226,14 @@ export function WeatherApp() {
                       {useKnots ? data.windAvg10MinKnots.toFixed(1) : data.windAvg10Min.toFixed(1)} {windUnit}
                     </span>
                   </div>
+                  <div className="mt-3 pt-3 border-t border-cyan-400/30 space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-cyan-100 text-sm">Max 1h:</span>
+                      <span className="text-lg font-semibold text-orange-300">
+                        {useKnots ? data.windMax1HourKnots.toFixed(1) : data.windMax1Hour.toFixed(1)} {windUnit}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
 

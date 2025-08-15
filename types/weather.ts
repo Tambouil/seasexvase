@@ -16,6 +16,8 @@ export interface WeatherData {
   windMaxDay: number;
   windMaxDayKnots: number;
   windMaxDayTime: string;
+  windMax1Hour: number;
+  windMax1HourKnots: number;
   windMaxMonth: number;
   windMaxMonthKnots: number;
   windMaxYear: number;
