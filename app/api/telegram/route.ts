@@ -1,5 +1,28 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { canSendNotification, setNotificationSent } from './cooldown';
+
+const formatDirection = (degrees: number): string => {
+  const directions = [
+    'N',
+    'NNE',
+    'NE',
+    'ENE',
+    'E',
+    'ESE',
+    'SE',
+    'SSE',
+    'S',
+    'SSO',
+    'SO',
+    'OSO',
+    'O',
+    'ONO',
+    'NO',
+    'NNO',
+  ];
+  const index = Math.round(degrees / 22.5) % 16;
+  return directions[index];
+};
 
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
@@ -15,28 +38,25 @@ export async function POST() {
 async function handleTelegramAlert() {
   try {
     if (!TELEGRAM_BOT_TOKEN || !CHAT_ID) {
-      return NextResponse.json(
-        { error: 'Telegram configuration missing' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Telegram configuration missing' }, { status: 500 });
     }
 
     // Récupérer les données météo
     const weatherResponse = await fetch('https://www.meteolarochelle.fr/wdlchatel/clientraw.txt');
     const weatherData = await weatherResponse.text();
     const values = weatherData.split(' ');
-    
+
     const windSpeedKnots = parseFloat(values[1] || '0');
     const windDirection = parseFloat(values[3] || '0');
     const temperature = parseFloat(values[4] || '0');
-    
+
     console.log(`Current wind: ${windSpeedKnots} knots`);
-    
+
     // Vérifier si le vent est > 15 nœuds
     if (windSpeedKnots <= 15) {
-      return NextResponse.json({ 
-        message: 'Wind too low', 
-        windSpeed: windSpeedKnots 
+      return NextResponse.json({
+        message: 'Wind too low',
+        windSpeed: windSpeedKnots,
       });
     }
 
@@ -46,16 +66,16 @@ async function handleTelegramAlert() {
       return NextResponse.json({
         message: 'Notification cooldown active (4h)',
         windSpeed: windSpeedKnots,
-        skipped: true
+        skipped: true,
       });
     }
-    
+
     // Préparer le message Telegram
     const message = `🌬️ *Vent favorable détecté !*
     
 📍 Châtelaillon-Plage
 💨 ${windSpeedKnots} nœuds
-🧭 ${windDirection}°
+🧭 ${formatDirection(windDirection)} ${windDirection}°
 🌡️ ${temperature}°C
 
 ⛵ Conditions parfaites pour naviguer !`;
@@ -70,33 +90,29 @@ async function handleTelegramAlert() {
       body: JSON.stringify({
         chat_id: CHAT_ID,
         text: message,
-        parse_mode: 'Markdown'
+        parse_mode: 'Markdown',
       }),
     });
-    
+
     if (!telegramResponse.ok) {
       const error = await telegramResponse.text();
       throw new Error(`Telegram API error: ${error}`);
     }
-    
+
     const result = await telegramResponse.json();
-    
+
     // Marquer la notification comme envoyée pour le cooldown
     await setNotificationSent();
-    
+
     return NextResponse.json({
       message: 'Telegram alert sent',
       windSpeed: windSpeedKnots,
       windDirection: windDirection,
       temperature: temperature,
-      telegramResult: result
+      telegramResult: result,
     });
-    
   } catch (error) {
     console.error('Error in telegram alert:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 });
   }
 }

@@ -62,8 +62,25 @@ export function WeatherApp() {
   if (!data) return null;
 
   const formatDirection = (degrees: number): string => {
-    const directions = ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO'];
-    const index = Math.round(degrees / 45) % 8;
+    const directions = [
+      'N',
+      'NNE',
+      'NE',
+      'ENE',
+      'E',
+      'ESE',
+      'SE',
+      'SSE',
+      'S',
+      'SSO',
+      'SO',
+      'OSO',
+      'O',
+      'ONO',
+      'NO',
+      'NNO',
+    ];
+    const index = Math.round(degrees / 22.5) % 16;
     return directions[index];
   };
 
@@ -89,9 +106,9 @@ export function WeatherApp() {
 
   const getWindStrength = (speed: number) => {
     // Using km/h as reference for wind strength categories
-    if (speed < 10) return { label: 'Faible', color: 'bg-green-500' };
-    if (speed < 25) return { label: 'Modéré', color: 'bg-yellow-500' };
-    if (speed < 50) return { label: 'Fort', color: 'bg-orange-500' };
+    if (speed < 30) return { label: 'Faible', color: 'bg-green-500' };
+    if (speed < 50) return { label: 'Modéré', color: 'bg-yellow-500' };
+    if (speed < 70) return { label: 'Fort', color: 'bg-orange-500' };
     return { label: 'Très fort', color: 'bg-red-500' };
   };
 
