@@ -1,3 +1,5 @@
+'use client';
+
 import { WeatherCard } from '@/components/WeatherCard';
 import { WindRose } from '@/components/WindRose';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -327,6 +329,10 @@ export function WeatherApp() {
             icon={<CloudRain className="text-blue-400" />}
             className="hover:shadow-lg transition-shadow"
           />
+        </div>
+
+        {/* Wind Forecast Section */}
+        <div className="mb-8">
         </div>
 
         {/* Footer */}
