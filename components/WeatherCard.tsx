@@ -19,23 +19,23 @@ export function WeatherCard({
   className 
 }: WeatherCardProps) {
   return (
-    <Card className={cn('w-full', className)}>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
+    <Card className={cn('w-full shadow-weather shadow-weather-hover bg-white rounded-2xl border-0', className)}>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+        <CardTitle className="text-base font-semibold text-gray-900">
           {title}
         </CardTitle>
         {icon && (
-          <div className="h-4 w-4 text-muted-foreground">
+          <div className="h-6 w-6 text-indigo-600">
             {icon}
           </div>
         )}
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold">
-          {value}{unit && <span className="text-lg text-muted-foreground ml-1">{unit}</span>}
+        <div className="text-3xl font-bold text-gray-900">
+          {value}{unit && <span className="text-lg font-medium text-muted-foreground ml-2">{unit}</span>}
         </div>
         {subtitle && (
-          <div className="text-xs text-muted-foreground mt-1">
+          <div className="text-sm text-muted-foreground mt-3">
             {subtitle}
           </div>
         )}

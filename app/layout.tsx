@@ -5,7 +5,7 @@ import './globals.css';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Station Météo Châtelaillon',
+  title: 'Station Météo de Fouras',
   description: 'Station météo en temps réel avec alertes vent',
 };
 

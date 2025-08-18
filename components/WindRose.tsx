@@ -1,5 +1,3 @@
-import React from 'react';
-
 interface WindRoseProps {
   direction: number;
   speed: number;
@@ -36,7 +34,7 @@ export function WindRose({ direction, speed, speedUnit }: WindRoseProps) {
         <circle cx="100" cy="100" r="90" fill="none" stroke="currentColor" className="text-gray-200" strokeWidth="1" />
         <circle cx="100" cy="100" r="60" fill="none" stroke="currentColor" className="text-gray-200" strokeWidth="1" />
         <circle cx="100" cy="100" r="30" fill="none" stroke="currentColor" className="text-gray-200" strokeWidth="1" />
-        
+
         {/* Lignes des points cardinaux */}
         {cardinalPoints.map((point) => {
           const radians = (point.angle * Math.PI) / 180;
@@ -44,7 +42,7 @@ export function WindRose({ direction, speed, speedUnit }: WindRoseProps) {
           const y1 = 100 - Math.cos(radians) * 30;
           const x2 = 100 + Math.sin(radians) * 90;
           const y2 = 100 - Math.cos(radians) * 90;
-          
+
           return (
             <line
               key={point.label}
@@ -62,36 +60,20 @@ export function WindRose({ direction, speed, speedUnit }: WindRoseProps) {
         {/* Flèche de direction du vent */}
         <g transform={`rotate(${direction} 100 100)`}>
           {/* Tige de la flèche */}
-          <line
-            x1="100"
-            y1="100"
-            x2="100"
-            y2="25"
-            stroke="currentColor"
-            className="text-blue-600"
-            strokeWidth="3"
-          />
+          <line x1="100" y1="100" x2="100" y2="25" stroke="currentColor" className="text-red-600" strokeWidth="3" />
           {/* Pointe de la flèche */}
-          <polygon
-            points="100,15 90,35 110,35"
-            fill="currentColor"
-            className="text-blue-600"
-          />
+          <polygon points="100,15 90,35 110,35" fill="currentColor" className="text-red-600" />
           {/* Queue de la flèche (d'où vient le vent) */}
-          <polygon
-            points="100,175 95,165 105,165"
-            fill="currentColor"
-            className="text-red-500"
-          />
+          <polygon points="100,175 95,165 105,165" fill="currentColor" className="text-red-500" />
         </g>
       </svg>
 
       {/* Points cardinaux principaux */}
       {cardinalPoints.map((point) => {
         const radians = (point.angle * Math.PI) / 180;
-        const x = 50 + Math.sin(radians) * 42;
-        const y = 50 - Math.cos(radians) * 42;
-        
+        const x = 50 + Math.sin(radians) * 52;
+        const y = 50 - Math.cos(radians) * 52;
+
         return (
           <div
             key={point.label}
@@ -110,13 +92,13 @@ export function WindRose({ direction, speed, speedUnit }: WindRoseProps) {
       {/* Points intermédiaires */}
       {intermediatePoints.map((point) => {
         const radians = (point.angle * Math.PI) / 180;
-        const x = 50 + Math.sin(radians) * 42;
-        const y = 50 - Math.cos(radians) * 42;
-        
+        const x = 50 + Math.sin(radians) * 52;
+        const y = 50 - Math.cos(radians) * 52;
+
         return (
           <div
             key={point.label}
-            className="absolute text-xs text-gray-500"
+            className="absolute text-xs text-white/70 font-medium"
             style={{
               left: `${x}%`,
               top: `${y}%`,
@@ -131,7 +113,7 @@ export function WindRose({ direction, speed, speedUnit }: WindRoseProps) {
       {/* Valeur centrale */}
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <div className="text-lg font-bold">{speed.toFixed(1)}</div>
-        <div className="text-xs text-gray-600">{speedUnit}</div>
+        <div className="text-xs text-gray-200">{speedUnit}</div>
       </div>
     </div>
   );

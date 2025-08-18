@@ -171,3 +171,25 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Force generation of dynamic color classes used in WindForecast */
+@layer utilities {
+  .bg-sky-300, .bg-sky-400, .bg-blue-400, .bg-blue-500, 
+  .bg-emerald-400, .bg-green-500, .bg-green-600, 
+  .bg-yellow-400, .bg-amber-500, .bg-orange-500,
+  .bg-red-500, .bg-red-600, .bg-red-700, .bg-red-800,
+  .bg-purple-600, .bg-gray-100,
+  .bg-gradient-to-r, .from-blue-600, .to-indigo-700,
+  .bg-gradient-to-br, .from-blue-50, .to-indigo-100 {
+    /* Force Tailwind to generate these classes */
+  }
+  
+  
+  .shadow-weather {
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  }
+  
+  .shadow-weather-strong {
+    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.15), 0 8px 10px -4px rgba(0, 0, 0, 0.1);
+  }
+}
