@@ -13,8 +13,8 @@ interface ForecastData {
 async function getWindForecast(): Promise<{ forecasts: ForecastData[]; error?: string }> {
   try {
     const response = await fetch(
-      `https://${
-        process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL || 'http://localhost:3000'
+      `${
+        process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL}` : 'http://localhost:3000'
       }/api/meteo-france?lat=45.99&lon=-1.1`,
       {
         next: { revalidate: 3600 }, // Revalidate every hour
