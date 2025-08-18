@@ -1,12 +1,12 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 const AROME_API_KEY = process.env.AROME_API_KEY;
 const BASE_URL = 'https://public-api.meteofrance.fr/public/arome/1.0';
 
-export async function GET(request: Request) {
-  const url = new URL(request.url, request.url.startsWith('/') ? 'https://seasexvase.vercel.app' : undefined);
-  const lat = url.searchParams.get('lat') || '45.99';
-  const lon = url.searchParams.get('lon') || '-1.1';
+export async function GET(request: NextRequest) {
+  const searchParams = request.nextUrl.searchParams;
+  const lat = searchParams.get('lat') || '45.99';
+  const lon = searchParams.get('lon') || '-1.1';
 
   try {
     if (!AROME_API_KEY) {
