@@ -49,9 +49,30 @@ export async function GET() {
     forecasts.forEach((forecast) => {
       const forecastTime = new Date(forecast.time);
       
-      // Only analyze daylight hours (8h-21h) - extended for summer evening sessions
+      // Dynamic daylight hours based on French timezone and seasons
       const hour = forecastTime.getHours();
-      if (hour < 8 || hour > 21) return;
+      const month = forecastTime.getMonth() + 1; // 1-12
+      
+      // French timezone changes: last Sunday in March -> last Sunday in October
+      const isDST = month >= 4 && month <= 9; // Approximation: April to September
+      
+      // Dynamic hours based on season and available daylight
+      let startHour, endHour;
+      if (month >= 5 && month <= 8) {
+        // Summer (May-August): longer days, can navigate later
+        startHour = 7;
+        endHour = isDST ? 21 : 20;
+      } else if (month >= 3 && month <= 4 || month >= 9 && month <= 10) {
+        // Spring/Autumn: moderate daylight
+        startHour = 8;
+        endHour = isDST ? 20 : 19;
+      } else {
+        // Winter (Nov-Feb): shorter days
+        startHour = 9;
+        endHour = 18;
+      }
+      
+      if (hour < startHour || hour > endHour) return;
 
       // Skip if no tide data available
       if (!tides || tides.length === 0) return;
