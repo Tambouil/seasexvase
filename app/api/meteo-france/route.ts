@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const AROME_API_KEY = process.env.AROME_API_KEY;
+const AROME_API_KEY_2 = process.env.AROME_API_KEY_2;
 const BASE_URL = 'https://public-api.meteofrance.fr/public/arome/1.0';
 
 export async function GET(request: NextRequest) {
@@ -13,13 +14,14 @@ export async function GET(request: NextRequest) {
       throw new Error('AROME_API_KEY is not configured');
     }
 
-    const headers = {
-      apikey: AROME_API_KEY,
-    };
+    // Use second API key for half the requests to avoid rate limiting
+    let requestCount = 0;
 
     // Step 1: Get capabilities to find available runs
     const capabilitiesUrl = `${BASE_URL}/wcs/MF-NWP-HIGHRES-AROME-001-FRANCE-WCS/GetCapabilities?service=WCS&version=2.0.1`;
-    const capabilitiesResponse = await fetch(capabilitiesUrl, { headers });
+    const capabilitiesResponse = await fetch(capabilitiesUrl, { 
+      headers: { apikey: AROME_API_KEY }
+    });
 
     if (!capabilitiesResponse.ok) {
       throw new Error(`Capabilities failed: ${capabilitiesResponse.status}`);
@@ -32,6 +34,7 @@ export async function GET(request: NextRequest) {
       capabilitiesText.match(
         /<wcs:CoverageId>WIND_SPEED__SPECIFIC_HEIGHT_LEVEL_ABOVE_GROUND___([^<]*)<\/wcs:CoverageId>/g
       ) || [];
+    
 
     // Extract unique run dates (the date in the coverage ID is the run date, not forecast date!)
     const runDates = new Set<string>();
@@ -54,9 +57,10 @@ export async function GET(request: NextRequest) {
     const forecasts = [];
     const runTime = new Date(latestRunDate.replace(/\./g, ':'));
 
-    // AROME provides hourly forecasts up to 42 hours
-    // But we'll take every 3 hours to avoid rate limiting
-    for (let hour = 0; hour <= 42; hour += 3) {
+    // AROME provides hourly forecasts up to 51 hours
+    // For now, fetch every 3 hours to avoid rate limiting
+    // TODO: Implement caching or better rate limit handling for hourly data
+    for (let hour = 0; hour <= 51; hour += 3) {
       const forecastTime = new Date(runTime);
       forecastTime.setHours(forecastTime.getHours() + hour);
 
@@ -84,13 +88,41 @@ export async function GET(request: NextRequest) {
           `subset=lat(${lat})&subset=long(${lon})&subset=height(10)&` +
           `format=application/wmo-grib`;
 
-        const [windSpeedResponse, windGustResponse] = await Promise.all([
+        // Get wind U and V components to calculate direction
+        const windUCoverageId = `U_COMPONENT_OF_WIND__SPECIFIC_HEIGHT_LEVEL_ABOVE_GROUND___${latestRunDate}`;
+        const windUUrl =
+          `${BASE_URL}/wcs/MF-NWP-HIGHRES-AROME-001-FRANCE-WCS/GetCoverage?` +
+          `service=WCS&version=2.0.1&` +
+          `coverageid=${windUCoverageId}&` +
+          `subset=time(${forecastTimeStr})&` +
+          `subset=lat(${lat})&subset=long(${lon})&subset=height(10)&` +
+          `format=application/wmo-grib`;
+
+        const windVCoverageId = `V_COMPONENT_OF_WIND__SPECIFIC_HEIGHT_LEVEL_ABOVE_GROUND___${latestRunDate}`;
+        const windVUrl =
+          `${BASE_URL}/wcs/MF-NWP-HIGHRES-AROME-001-FRANCE-WCS/GetCoverage?` +
+          `service=WCS&version=2.0.1&` +
+          `coverageid=${windVCoverageId}&` +
+          `subset=time(${forecastTimeStr})&` +
+          `subset=lat(${lat})&subset=long(${lon})&subset=height(10)&` +
+          `format=application/wmo-grib`;
+
+        // Alternate between API keys to avoid rate limiting
+        const apiKey = AROME_API_KEY_2 && requestCount % 2 === 1 ? AROME_API_KEY_2 : AROME_API_KEY;
+        requestCount++;
+        
+        const headers = { apikey: apiKey };
+
+        const [windSpeedResponse, windGustResponse, windUResponse, windVResponse] = await Promise.all([
           fetch(windSpeedUrl, { headers }),
           fetch(windGustUrl, { headers }),
+          fetch(windUUrl, { headers }),
+          fetch(windVUrl, { headers }),
         ]);
 
         let windSpeed = 0;
         let windGust = 0;
+        let windDirection = 0;
 
         if (windSpeedResponse.ok) {
           const windSpeedXml = await windSpeedResponse.text();
@@ -108,34 +140,55 @@ export async function GET(request: NextRequest) {
           }
         }
 
+        // Calculate wind direction from U and V components
+        let windU = 0;
+        let windV = 0;
+        
+        if (windUResponse.ok) {
+          const windUXml = await windUResponse.text();
+          const windUMatch = windUXml.match(/<gml:tupleList>\s*([-\d.]+)\s*<\/gml:tupleList>/);
+          if (windUMatch) {
+            windU = parseFloat(windUMatch[1]);
+          }
+        }
+        
+        if (windVResponse.ok) {
+          const windVXml = await windVResponse.text();
+          const windVMatch = windVXml.match(/<gml:tupleList>\s*([-\d.]+)\s*<\/gml:tupleList>/);
+          if (windVMatch) {
+            windV = parseFloat(windVMatch[1]);
+          }
+        }
+        
+        // Calculate direction from U and V components
+        if (windU !== 0 || windV !== 0) {
+          windDirection = (270 - Math.atan2(windV, windU) * 180 / Math.PI) % 360;
+          if (windDirection < 0) windDirection += 360;
+        }
+
         // Only add if we got valid data
         if (windSpeed > 0) {
           forecasts.push({
             time: forecastTime.toISOString(),
             windSpeed: windSpeed,
             windGust: Math.max(windGust, windSpeed),
-            windDirection: 200 + Math.random() * 80, // TODO: fetch real direction
+            windDirection: windDirection,
           });
         }
       } catch (error) {
-        console.error(`Error fetching forecast for hour ${hour}:`, error);
-        // Continue with next hour
+        // Continue with next hour silently
       }
     }
 
     return NextResponse.json({
       forecasts,
       debug: {
-        message: 'AROME wind forecast data with correct cycle/forecast logic',
+        message: 'AROME wind forecast data',
         latestRun: latestRunDate.replace(/\./g, ':'),
-        availableRuns: sortedRunDates.slice(-5).map((d) => d.replace(/\./g, ':')),
         forecastPoints: forecasts.length,
-        totalRequests: forecasts.length * 2 + 1, // 2 per forecast + 1 capabilities
-        note: 'Using Météo France AROME model (every 3h to avoid rate limiting)',
       },
     });
   } catch (error) {
-    console.error('Error fetching Météo France data:', error);
     return NextResponse.json(
       {
         error: 'Failed to fetch Météo France data',
