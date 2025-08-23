@@ -25,23 +25,18 @@ interface SessionWindow {
 }
 
 export async function GET() {
-  console.log('[SessionAnalysis API] Starting analysis...');
   try {
     // Fetch wind forecast
     const baseUrl = process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL
       ? `https://${process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL}`
       : 'http://localhost:3000';
     const windUrl = `${baseUrl}/api/meteo-france?lat=45.99&lon=-1.1`;
-    console.log('[SessionAnalysis API] Fetching wind from:', windUrl);
     const windResponse = await fetch(windUrl);
-    console.log('[SessionAnalysis API] Wind response status:', windResponse.status);
     const windData = await windResponse.json();
     
     // Fetch tide data
     const tideUrl = `${baseUrl}/api/tides`;
-    console.log('[SessionAnalysis API] Fetching tide from:', tideUrl);
     const tideResponse = await fetch(tideUrl);
-    console.log('[SessionAnalysis API] Tide response status:', tideResponse.status);
     const tideData = await tideResponse.json();
 
     const forecasts: ForecastData[] = windData.forecasts || [];

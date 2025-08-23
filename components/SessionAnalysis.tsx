@@ -42,25 +42,18 @@ async function getSessionAnalysis(): Promise<AnalysisData | null> {
       : 'http://localhost:3000';
     
     const url = `${baseUrl}/api/session-analysis`;
-    console.log('[SessionAnalysis] Fetching from:', url);
     
     const response = await fetch(url, {
       cache: 'no-store'
     });
-
-    console.log('[SessionAnalysis] Response status:', response.status);
     
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('[SessionAnalysis] Error response:', errorText);
       throw new Error(`Failed to fetch session analysis: ${response.status}`);
     }
 
-    const data = await response.json();
-    console.log('[SessionAnalysis] Data received:', !!data);
-    return data;
+    return await response.json();
   } catch (error) {
-    console.error('[SessionAnalysis] Error fetching session analysis:', error);
+    console.error('Error fetching session analysis:', error);
     return null;
   }
 }
