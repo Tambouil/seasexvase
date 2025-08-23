@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { canSendNotification, setNotificationSent } from './cooldown';
 
 const formatDirection = (degrees: number): string => {
   const directions = [
@@ -60,16 +59,6 @@ async function handleTelegramAlert() {
       });
     }
 
-    // Vérifier le cooldown anti-spam
-    const canSend = await canSendNotification();
-    if (!canSend) {
-      return NextResponse.json({
-        message: 'Notification cooldown active (4h)',
-        windSpeed: windSpeedKnots,
-        skipped: true,
-      });
-    }
-
     // Préparer le message Telegram
     const message = `🌬️ *Vent favorable détecté !*
     
@@ -100,9 +89,6 @@ async function handleTelegramAlert() {
     }
 
     const result = await telegramResponse.json();
-
-    // Marquer la notification comme envoyée pour le cooldown
-    await setNotificationSent();
 
     return NextResponse.json({
       message: 'Telegram alert sent',
