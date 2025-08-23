@@ -28,9 +28,9 @@ export async function POST() {
 
     const { tomorrowBest, bestSessions, analysis } = analysisData;
 
-    let message = '🌊 **Rapport quotidien - Conditions Fouras** 🌊\n\n';
+    let message = '🌊 **VaseGuru au 🫡** 🌊\n\n';
 
-    if (tomorrowBest && tomorrowBest.score >= 60) {
+    if (tomorrowBest && tomorrowBest.score >= 80) {
       message += `✅ **EXCELLENTE SESSION DEMAIN !**\n`;
       message += `📅 ${tomorrowBest.date}\n`;
       message += `⏰ ${tomorrowBest.timeStart} - ${tomorrowBest.timeEnd}\n`;
@@ -38,8 +38,15 @@ export async function POST() {
       message += `🌊 Marée: ${tomorrowBest.tideHeight.toFixed(1)}m\n`;
       message += `⭐ Score: ${tomorrowBest.score}/100\n`;
       message += `📝 ${tomorrowBest.conditions}\n\n`;
+    } else if (tomorrowBest && tomorrowBest.score >= 60) {
+      message += `⚠️ **Session correcte demain**\n`;
+      message += `📅 ${tomorrowBest.date}\n`;
+      message += `⏰ ${tomorrowBest.timeStart} - ${tomorrowBest.timeEnd}\n`;
+      message += `💨 Vent: ${tomorrowBest.windSpeed} kts ${tomorrowBest.windDirection}\n`;
+      message += `🌊 Marée: ${tomorrowBest.tideHeight.toFixed(1)}m\n`;
+      message += `⭐ Score: ${tomorrowBest.score}/100\n\n`;
     } else if (tomorrowBest) {
-      message += `⚠️ **Session possible demain (conditions moyennes)**\n`;
+      message += `🟠 **Session possible demain (conditions moyennes)**\n`;
       message += `📅 ${tomorrowBest.date}\n`;
       message += `⏰ ${tomorrowBest.timeStart} - ${tomorrowBest.timeEnd}\n`;
       message += `💨 Vent: ${tomorrowBest.windSpeed} kts ${tomorrowBest.windDirection}\n`;
@@ -69,8 +76,7 @@ export async function POST() {
     message += `🟡 Sessions correctes: ${analysis.goodSessions}\n`;
     message += `🟠 Sessions moyennes: ${analysis.averageSessions}\n\n`;
 
-    message += `📱 Consulte l'app pour plus de détails !\n`;
-    message += `🕘 Prochaine notification demain à 21h`;
+    message += `📱 [Consulte l'app pour plus de détails !](https://presquilewind.vercel.app/)\n`;
 
     // Send Telegram message
     const telegramResponse = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
