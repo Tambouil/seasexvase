@@ -40,13 +40,13 @@ async function getSessionAnalysis(): Promise<AnalysisData | null> {
     const baseUrl = process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL
       ? `https://${process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL}`
       : 'http://localhost:3000';
-    
+
     const url = `${baseUrl}/api/session-analysis`;
-    
+
     const response = await fetch(url, {
-      cache: 'no-store'
+      cache: 'no-store',
     });
-    
+
     if (!response.ok) {
       throw new Error(`Failed to fetch session analysis: ${response.status}`);
     }
@@ -170,8 +170,8 @@ export async function SessionAnalysis() {
       <div className="p-3 bg-gray-50 border-t text-xs text-gray-600">
         <div className="flex flex-wrap gap-4">
           <div>
-            <strong>Critères:</strong> Vent excellent ≥20kts, Vent correct 15-19kts, Vent moyen 12-14kts (navigation
-            possible jusqu&apos;à 40kts), Marée ≥2.5m, Direction favorable, Heures de jour
+            <strong>Critères:</strong> Vent excellent ≥20kts, Vent correct 15-19kts, Vent moyen 12-14kts, Marée ≥2.5m,
+            Direction favorable, Heures de jour
           </div>
         </div>
       </div>
