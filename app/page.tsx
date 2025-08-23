@@ -30,14 +30,6 @@ export default function Home() {
         <Suspense fallback={<WindForecastLoading />}>
           <WindForecast />
         </Suspense>
-
-        {/* Footer */}
-        <div className="text-center text-sm text-gray-900 space-y-3 pt-8">
-          <p className="font-medium">Données en temps réel • Actualisation automatique toutes les 15 secondes</p>
-          <div className="bg-white shadow-weather rounded-2xl p-4 max-w-md mx-auto">
-            <p className="text-gray-900 text-sm font-medium">📱 Alertes Telegram automatiques quand le vent dépasse 15 nœuds</p>
-          </div>
-        </div>
       </div>
     </div>
   );
