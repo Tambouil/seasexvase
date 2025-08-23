@@ -163,69 +163,8 @@ export function WeatherApp() {
             Météo en direct
           </h2>
 
-          {/* Weather Grid - Current Conditions */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <WeatherCard
-              title="Température"
-              value={data.temperature.toFixed(1)}
-              unit="°C"
-              subtitle={
-                <div className="space-y-1">
-                  <div className="flex justify-between text-sm">
-                    <span>Min:</span>
-                    <span className="font-medium">{data.minTemperature.toFixed(1)}°C</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Max:</span>
-                    <span className="font-medium">{data.maxTemperature.toFixed(1)}°C</span>
-                  </div>
-                </div>
-              }
-              icon={<Thermometer className="text-orange-500" />}
-            />
-
-            <WeatherCard
-              title="Humidité"
-              value={data.humidity.toFixed(0)}
-              unit="%"
-              subtitle={
-                <div className="flex items-center gap-2">
-                  <span>État: </span>
-                  {getConditionBadge(data.humidity)}
-                </div>
-              }
-              icon={<Droplets className="text-blue-500" />}
-            />
-
-            <WeatherCard
-              title="Pression"
-              value={data.pressure.toFixed(1)}
-              unit="hPa"
-              subtitle={
-                <Progress
-                  value={Math.min(100, Math.max(0, ((data.pressure - 980) / 60) * 100))}
-                  className="w-full mt-2"
-                />
-              }
-              icon={<Eye className="text-purple-500" />}
-            />
-
-            <WeatherCard
-              title="Précipitations"
-              value={data.rainfall.toFixed(1)}
-              unit="mm"
-              subtitle={
-                <div className="space-y-1">
-                  <div className="text-sm">Taux: {data.rainfallRate.toFixed(1)} mm/h</div>
-                  <Progress value={Math.min(100, (data.rainfallRate / 10) * 100)} className="w-full" />
-                </div>
-              }
-              icon={<CloudRain className="text-blue-400" />}
-            />
-          </div>
-
           {/* Wind Statistics - Integrated in Live Weather */}
-          <div className="mt-8">
+          <div className="mb-8">
             <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl shadow-weather-strong p-6 sm:p-8 lg:p-10 text-white">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
                 <div className="flex items-center gap-4">
@@ -316,6 +255,67 @@ export function WeatherApp() {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Weather Grid - Current Conditions */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
+            <WeatherCard
+              title="Température"
+              value={data.temperature.toFixed(1)}
+              unit="°C"
+              subtitle={
+                <div className="space-y-1">
+                  <div className="flex justify-between text-sm">
+                    <span>Min:</span>
+                    <span className="font-medium">{data.minTemperature.toFixed(1)}°C</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Max:</span>
+                    <span className="font-medium">{data.maxTemperature.toFixed(1)}°C</span>
+                  </div>
+                </div>
+              }
+              icon={<Thermometer className="text-orange-500" />}
+            />
+
+            <WeatherCard
+              title="Humidité"
+              value={data.humidity.toFixed(0)}
+              unit="%"
+              subtitle={
+                <div className="flex items-center gap-2">
+                  <span>État: </span>
+                  {getConditionBadge(data.humidity)}
+                </div>
+              }
+              icon={<Droplets className="text-blue-500" />}
+            />
+
+            <WeatherCard
+              title="Pression"
+              value={data.pressure.toFixed(1)}
+              unit="hPa"
+              subtitle={
+                <Progress
+                  value={Math.min(100, Math.max(0, ((data.pressure - 980) / 60) * 100))}
+                  className="w-full mt-2"
+                />
+              }
+              icon={<Eye className="text-purple-500" />}
+            />
+
+            <WeatherCard
+              title="Précipitations"
+              value={data.rainfall.toFixed(1)}
+              unit="mm"
+              subtitle={
+                <div className="space-y-1">
+                  <div className="text-sm">Taux: {data.rainfallRate.toFixed(1)} mm/h</div>
+                  <Progress value={Math.min(100, (data.rainfallRate / 10) * 100)} className="w-full" />
+                </div>
+              }
+              icon={<CloudRain className="text-blue-400" />}
+            />
           </div>
         </div>
       </div>
