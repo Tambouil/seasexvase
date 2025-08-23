@@ -62,7 +62,7 @@ export async function SessionAnalysis() {
   if (!data) {
     return (
       <div className="bg-white rounded-xl shadow-lg p-6">
-        <div className="text-red-600">Erreur l&apos;analyse des sessions</div>
+        <div className="text-red-600">Erreur lors de l&apos;analyse des sessions</div>
       </div>
     );
   }
