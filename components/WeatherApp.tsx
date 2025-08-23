@@ -33,7 +33,7 @@ export function WeatherApp() {
 
   if (loading) {
     return (
-      <div className="max-w-7xl mx-auto">
+      <div>
         {/* Header Skeleton */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-6">
@@ -208,7 +208,7 @@ export function WeatherApp() {
 
   return (
     <>
-      <div className="max-w-7xl mx-auto">
+      <div>
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-6">
