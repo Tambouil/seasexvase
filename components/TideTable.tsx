@@ -121,34 +121,26 @@ export function TideTable() {
         </p>
       </div>
 
-      <div className="p-4">
+      <div className="p-4 space-y-3">
         {Object.entries(tidesByDay).map(([day, tides]) => (
-          <div key={day} className="mb-6 last:mb-0">
-            <h3 className="font-semibold text-gray-800 mb-3 border-b border-gray-200 pb-1">
+          <div key={day} className="border border-gray-200 rounded-lg p-3">
+            <div className="font-semibold text-gray-800 text-sm mb-2">
               {day}
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            </div>
+            <div className="grid grid-cols-2 gap-2">
               {tides.map((tide, index) => (
                 <div
                   key={index}
-                  className={`p-3 rounded-lg border-2 ${getTideHeightColor(tide.height, tide.type)}`}
+                  className={`p-2 rounded border ${getTideHeightColor(tide.height, tide.type)}`}
                 >
-                  <div className="flex justify-between items-center">
+                  <div className="flex justify-between items-center text-sm">
                     <div>
-                      <div className="font-semibold">
-                        {tide.type === 'high' ? '🌊 Pleine mer' : '🏖️ Basse mer'}
-                      </div>
-                      <div className="text-sm opacity-80">
-                        {formatTideTime(tide.time)}
+                      <div className="font-medium">
+                        {tide.type === 'high' ? '🌊' : '🏖️'} {formatTideTime(tide.time)}
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="text-lg font-bold">
-                        {formatTideHeight(tide.height)}
-                      </div>
-                      <div className="text-xs opacity-70">
-                        {tide.type === 'high' ? 'Hauteur max' : 'Hauteur min'}
-                      </div>
+                    <div className="font-bold">
+                      {formatTideHeight(tide.height)}
                     </div>
                   </div>
                 </div>
