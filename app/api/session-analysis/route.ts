@@ -33,7 +33,7 @@ export async function GET() {
     const windUrl = `${baseUrl}/api/meteo-france?lat=45.99&lon=-1.1`;
     const windResponse = await fetch(windUrl);
     const windData = await windResponse.json();
-    
+
     // Fetch tide data
     const tideUrl = `${baseUrl}/api/tides`;
     const tideResponse = await fetch(tideUrl);
@@ -42,27 +42,26 @@ export async function GET() {
     const forecasts: ForecastData[] = windData.forecasts || [];
     const tides: TideEvent[] = tideData.tideEvents || [];
 
-    
     const sessions: SessionWindow[] = [];
 
     // Analyze each forecast hour
     forecasts.forEach((forecast) => {
       const forecastTime = new Date(forecast.time);
-      
+
       // Dynamic daylight hours based on French timezone and seasons
       const hour = forecastTime.getHours();
       const month = forecastTime.getMonth() + 1; // 1-12
-      
+
       // French timezone changes: last Sunday in March -> last Sunday in October
       const isDST = month >= 4 && month <= 9; // Approximation: April to September
-      
+
       // Dynamic hours based on season and available daylight
       let startHour, endHour;
       if (month >= 5 && month <= 8) {
         // Summer (May-August): longer days, can navigate later
         startHour = 7;
         endHour = isDST ? 21 : 20;
-      } else if (month >= 3 && month <= 4 || month >= 9 && month <= 10) {
+      } else if ((month >= 3 && month <= 4) || (month >= 9 && month <= 10)) {
         // Spring/Autumn: moderate daylight
         startHour = 8;
         endHour = isDST ? 20 : 19;
@@ -71,7 +70,7 @@ export async function GET() {
         startHour = 9;
         endHour = 18;
       }
-      
+
       if (hour < startHour || hour > endHour) return;
 
       // Skip if no tide data available
@@ -80,7 +79,7 @@ export async function GET() {
       // Find closest tide height
       let closestTide = tides[0];
       let minTimeDiff = Math.abs(new Date(tides[0].time).getTime() - forecastTime.getTime());
-      
+
       tides.forEach((tide) => {
         const timeDiff = Math.abs(new Date(tide.time).getTime() - forecastTime.getTime());
         if (timeDiff < minTimeDiff) {
@@ -91,11 +90,10 @@ export async function GET() {
 
       // Convert wind speed to knots for analysis
       const windSpeedKnots = forecast.windSpeed / 1.852;
-      
-      
+
       // Skip sessions below minimum wind criteria (12 kts minimum)
       if (windSpeedKnots < 12) return;
-      
+
       // Scoring criteria for windsurfing/sailing
       let score = 0;
       let conditions = '';
@@ -118,20 +116,26 @@ export async function GET() {
       // Tide height scoring
       if (closestTide.height >= 4.0) {
         score += 30;
-        conditions += '+ Grande marée ';
+        conditions += '+ Pleine eau ';
       } else if (closestTide.height >= 2.5) {
         score += 20;
         conditions += '+ Marée suffisante ';
       }
 
-      // Wind direction scoring (prefer offshore/side-shore winds)
+      // Wind direction scoring (prioritize regular sea winds over gusty land winds)
       const windDir = forecast.windDirection;
-      // For Fouras, good directions are roughly SW to NW (225-315°)
-      if ((windDir >= 225 && windDir <= 315) || (windDir >= 45 && windDir <= 135)) {
+
+      if (windDir >= 225 && windDir <= 315) {
+        // SW to NW: sea winds, regular and strong
         score += 20;
-        conditions += '+ Direction favorable ';
+        conditions += '+ Vent à dominante Ouest ';
+      } else if (windDir >= 45 && windDir <= 135) {
+        // NE to SE: land winds, gusty but navigable
+        score += 12;
+        conditions += '+ Vent à dominante Est ';
       } else {
-        score += 10;
+        // Other directions: less favorable
+        score += 8;
         conditions += '+ Direction correcte ';
       }
 
@@ -143,11 +147,13 @@ export async function GET() {
 
       const windDirectionStr = getWindDirection(forecast.windDirection);
 
-
       sessions.push({
         date: forecastTime.toLocaleDateString('fr-FR'),
         timeStart: forecastTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
-        timeEnd: new Date(forecastTime.getTime() + 2 * 60 * 60 * 1000).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+        timeEnd: new Date(forecastTime.getTime() + 2 * 60 * 60 * 1000).toLocaleTimeString('fr-FR', {
+          hour: '2-digit',
+          minute: '2-digit',
+        }),
         windSpeed: Math.round(windSpeedKnots),
         windDirection: windDirectionStr,
         tideHeight: closestTide.height,
@@ -159,17 +165,16 @@ export async function GET() {
     // Sort by score (best conditions first)
     sessions.sort((a, b) => b.score - a.score);
 
-
     // Get best sessions (score >= 60)
-    const bestSessions = sessions.filter(session => session.score >= 60);
-    
+    const bestSessions = sessions.filter((session) => session.score >= 60);
+
     // Get next day's best session for notification
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     const tomorrowStr = tomorrow.toLocaleDateString('fr-FR');
-    
+
     const tomorrowBest = sessions
-      .filter(session => session.date === tomorrowStr)
+      .filter((session) => session.date === tomorrowStr)
       .sort((a, b) => b.score - a.score)[0];
 
     return NextResponse.json({
@@ -178,22 +183,36 @@ export async function GET() {
       tomorrowBest,
       analysis: {
         totalWindows: sessions.length,
-        excellentSessions: sessions.filter(s => s.score >= 80).length,
-        goodSessions: sessions.filter(s => s.score >= 60 && s.score < 80).length,
-        averageSessions: sessions.filter(s => s.score >= 40 && s.score < 60).length,
-      }
+        excellentSessions: sessions.filter((s) => s.score >= 80).length,
+        goodSessions: sessions.filter((s) => s.score >= 60 && s.score < 80).length,
+        averageSessions: sessions.filter((s) => s.score >= 40 && s.score < 60).length,
+      },
     });
   } catch (error) {
     console.error('Error analyzing sessions:', error);
-    return NextResponse.json(
-      { error: 'Failed to analyze session conditions' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to analyze session conditions' }, { status: 500 });
   }
 }
 
 function getWindDirection(degrees: number): string {
-  const directions = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSO', 'SO', 'OSO', 'O', 'ONO', 'NO', 'NNO'];
+  const directions = [
+    'N',
+    'NNE',
+    'NE',
+    'ENE',
+    'E',
+    'ESE',
+    'SE',
+    'SSE',
+    'S',
+    'SSO',
+    'SO',
+    'OSO',
+    'O',
+    'ONO',
+    'NO',
+    'NNO',
+  ];
   const index = Math.round(degrees / 22.5) % 16;
   return directions[index];
 }
