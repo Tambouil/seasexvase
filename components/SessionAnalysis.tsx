@@ -37,21 +37,30 @@ function getScoreIcon(score: number): string {
 
 async function getSessionAnalysis(): Promise<AnalysisData | null> {
   try {
-    const response = await fetch(
-      `${
-        process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL
-          ? `https://${process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL}`
-          : 'http://localhost:3000'
-      }/api/session-analysis`
-    );
+    const baseUrl = process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL
+      ? `https://${process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL}`
+      : 'http://localhost:3000';
+    
+    const url = `${baseUrl}/api/session-analysis`;
+    console.log('[SessionAnalysis] Fetching from:', url);
+    
+    const response = await fetch(url, {
+      cache: 'no-store'
+    });
 
+    console.log('[SessionAnalysis] Response status:', response.status);
+    
     if (!response.ok) {
-      throw new Error('Failed to fetch session analysis');
+      const errorText = await response.text();
+      console.error('[SessionAnalysis] Error response:', errorText);
+      throw new Error(`Failed to fetch session analysis: ${response.status}`);
     }
 
-    return await response.json();
+    const data = await response.json();
+    console.log('[SessionAnalysis] Data received:', !!data);
+    return data;
   } catch (error) {
-    console.error('Error fetching session analysis:', error);
+    console.error('[SessionAnalysis] Error fetching session analysis:', error);
     return null;
   }
 }
