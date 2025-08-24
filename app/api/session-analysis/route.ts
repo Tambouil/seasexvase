@@ -30,7 +30,7 @@ export async function GET() {
     const baseUrl = process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL
       ? `https://${process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL}`
       : 'http://localhost:3000';
-    const windUrl = `${baseUrl}/api/meteo-france?lat=45.99&lon=-1.1`;
+    const windUrl = `${baseUrl}/api/open-meteo?lat=45.99&lon=-1.1`;
     const windResponse = await fetch(windUrl);
     const windData = await windResponse.json();
 

@@ -1,6 +1,20 @@
-'use client';
-
-import { useEffect, useState } from 'react';
+interface OpenMeteoData {
+  latitude: number;
+  longitude: number;
+  elevation: number;
+  utc_offset_seconds: number;
+  hourly: {
+    time: string[];
+    wind_speed_10m: { [key: string]: number | null };
+    wind_gusts_10m: { [key: string]: number | null };
+    wind_direction_10m: { [key: string]: number | null };
+  };
+  hourly_units: {
+    wind_speed_10m: string;
+    wind_gusts_10m: string;
+    wind_direction_10m: string;
+  };
+}
 
 interface ForecastData {
   time: string;
@@ -30,57 +44,78 @@ function getWindGustColorClass(speedKnots: number): string {
   return 'bg-purple-200 text-purple-900';
 }
 
-function kmhToKnots(kmh: number): number {
-  return kmh / 1.852;
-}
-
 function formatDirection(degrees: number): string {
-  const directions = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSO', 'SO', 'OSO', 'O', 'ONO', 'NO', 'NNO'];
+  const directions = [
+    'N',
+    'NNE',
+    'NE',
+    'ENE',
+    'E',
+    'ESE',
+    'SE',
+    'SSE',
+    'S',
+    'SSO',
+    'SO',
+    'OSO',
+    'O',
+    'ONO',
+    'NO',
+    'NNO',
+  ];
   const index = Math.round(degrees / 22.5) % 16;
   return directions[index];
 }
 
-export function WindguruTable() {
-  const [forecasts, setForecasts] = useState<ForecastData[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [runDate, setRunDate] = useState<string>('');
-
-  useEffect(() => {
-    async function fetchForecasts() {
-      try {
-        const response = await fetch('/api/meteo-france?lat=45.99&lon=-1.1');
-        if (!response.ok) {
-          throw new Error('Failed to fetch forecast data');
-        }
-        const data = await response.json();
-        setForecasts(data.forecasts || []);
-        if (data.debug?.latestRun) {
-          setRunDate(data.debug.latestRun);
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Unknown error');
-      } finally {
-        setLoading(false);
-      }
+async function getWeatherData(): Promise<ForecastData[]> {
+  const response = await fetch(
+    `${
+      process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL
+        ? `https://${process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL}`
+        : 'http://localhost:3000'
+    }/api/open-meteo?lat=45.99&lon=-1.1`,
+    {
+      next: { revalidate: 3600 }, // Cache for 1 hour
     }
+  );
 
-    fetchForecasts();
-  }, []);
+  if (!response.ok) {
+    throw new Error('Failed to fetch forecast data');
+  }
 
-  if (loading) {
-    return (
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
-          <div className="grid grid-cols-12 gap-1">
-            {Array.from({ length: 48 }).map((_, i) => (
-              <div key={i} className="h-10 bg-gray-200 rounded"></div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
+  const data: OpenMeteoData = await response.json();
+
+  // Transform Open-Meteo data to our format
+  const transformedForecasts: ForecastData[] = [];
+
+  // Get data for every 1 hours
+  for (let i = 0; i < data.hourly.time.length; i += 1) {
+    const windSpeed = data.hourly.wind_speed_10m[i];
+    const windGust = data.hourly.wind_gusts_10m[i];
+    const windDirection = data.hourly.wind_direction_10m[i];
+
+    // Skip if data is null
+    if (windSpeed === null || windSpeed === undefined) continue;
+
+    transformedForecasts.push({
+      time: data.hourly.time[i],
+      windSpeed: windSpeed,
+      windGust: windGust || windSpeed,
+      windDirection: windDirection || 0,
+    });
+  }
+
+  return transformedForecasts;
+}
+
+export async function WindguruTable() {
+  let forecasts: ForecastData[] = [];
+  let error: string | null = null;
+
+  try {
+    forecasts = await getWeatherData();
+  } catch (err) {
+    error = err instanceof Error ? err.message : 'Unknown error';
   }
 
   if (error) {
@@ -107,18 +142,8 @@ export function WindguruTable() {
   return (
     <div className="bg-white rounded-xl shadow-lg overflow-hidden">
       <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4">
-        <h2 className="text-xl font-bold">AROME 1.3 km - Fouras</h2>
-        {runDate && (
-          <p className="text-sm text-blue-100 mt-1">
-            Modèle du {new Date(runDate).toLocaleDateString('fr-FR', { 
-              weekday: 'short', 
-              day: 'numeric', 
-              month: 'short', 
-              hour: '2-digit',
-              minute: '2-digit' 
-            })} UTC
-          </p>
-        )}
+        <h2 className="text-xl font-bold">AROME France HD 1.5 km - Fouras</h2>
+        <p className="text-sm text-blue-100 mt-1">Prévisions Open-Meteo / Météo-France</p>
       </div>
 
       <div className="overflow-x-auto">
@@ -152,12 +177,9 @@ export function WindguruTable() {
             <tr className="border-b border-gray-200">
               <td className="px-2 py-1 font-medium sticky left-0 bg-gray-50 z-10">Vent (kts)</td>
               {forecasts.map((forecast, i) => {
-                const speedKnots = kmhToKnots(forecast.windSpeed);
+                const speedKnots = forecast.windSpeed;
                 return (
-                  <td
-                    key={i}
-                    className={`text-center px-1 py-2 text-xs font-bold ${getWindColorClass(speedKnots)}`}
-                  >
+                  <td key={i} className={`text-center px-1 py-2 text-xs font-bold ${getWindColorClass(speedKnots)}`}>
                     {Math.round(speedKnots)}
                   </td>
                 );
@@ -166,12 +188,9 @@ export function WindguruTable() {
             <tr className="border-b border-gray-200">
               <td className="px-2 py-1 font-medium sticky left-0 bg-gray-50 z-10">Rafales (kts)</td>
               {forecasts.map((forecast, i) => {
-                const gustKnots = kmhToKnots(forecast.windGust);
+                const gustKnots = forecast.windGust;
                 return (
-                  <td
-                    key={i}
-                    className={`text-center px-1 py-2 text-xs font-bold ${getWindGustColorClass(gustKnots)}`}
-                  >
+                  <td key={i} className={`text-center px-1 py-2 text-xs font-bold ${getWindGustColorClass(gustKnots)}`}>
                     {Math.round(gustKnots)}
                   </td>
                 );
