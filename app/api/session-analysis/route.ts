@@ -1,12 +1,5 @@
 import { NextResponse } from 'next/server';
 
-interface ForecastData {
-  time: string;
-  windSpeed: number;
-  windGust: number;
-  windDirection: number;
-}
-
 interface TideEvent {
   time: string;
   height: number;
@@ -39,18 +32,36 @@ export async function GET() {
     const tideResponse = await fetch(tideUrl);
     const tideData = await tideResponse.json();
 
-    const forecasts: ForecastData[] = windData.forecasts || [];
     const tides: TideEvent[] = tideData.tideEvents || [];
-
     const sessions: SessionWindow[] = [];
 
-    // Analyze each forecast hour
-    forecasts.forEach((forecast) => {
-      const forecastTime = new Date(forecast.time);
+    // Counters for statistics
+    let daylightFiltered = 0;
+
+    // Analyze each forecast hour directly from Open-Meteo format
+    if (
+      !windData.hourly ||
+      !windData.hourly.time ||
+      !windData.hourly.wind_speed_10m ||
+      !windData.hourly.wind_direction_10m
+    ) {
+      return NextResponse.json({ error: 'Invalid wind data format' }, { status: 500 });
+    }
+
+    for (let i = 0; i < windData.hourly.time.length; i++) {
+      const windSpeed = windData.hourly.wind_speed_10m[i];
+      const windDirection = windData.hourly.wind_direction_10m[i];
+
+      // Skip if no wind data
+      if (windSpeed === null || windSpeed === undefined) continue;
+
+      const forecastTime = new Date(windData.hourly.time[i]);
 
       // Dynamic daylight hours based on French timezone and seasons
-      const hour = forecastTime.getHours();
-      const month = forecastTime.getMonth() + 1; // 1-12
+      // Convert to French local time
+      const frenchTime = new Date(forecastTime.toLocaleString('fr-FR', { timeZone: 'Europe/Paris' }));
+      const hour = frenchTime.getHours();
+      const month = frenchTime.getMonth() + 1; // 1-12
 
       // French timezone changes: last Sunday in March -> last Sunday in October
       const isDST = month >= 4 && month <= 9; // Approximation: April to September
@@ -71,10 +82,13 @@ export async function GET() {
         endHour = 18;
       }
 
-      if (hour < startHour || hour > endHour) return;
+      if (hour < startHour || hour > endHour) {
+        daylightFiltered++;
+        continue;
+      }
 
       // Skip if no tide data available
-      if (!tides || tides.length === 0) return;
+      if (!tides || tides.length === 0) continue;
 
       // Find closest tide height
       let closestTide = tides[0];
@@ -88,30 +102,27 @@ export async function GET() {
         }
       });
 
-      // Convert wind speed to knots for analysis
-      const windSpeedKnots = forecast.windSpeed / 1.852;
-
       // Skip sessions below minimum wind criteria (12 kts minimum)
-      if (windSpeedKnots < 12) return;
+      if (windSpeed < 12) continue;
+
+      // Skip if tide is too low for navigation (minimum 2.5m)
+      if (closestTide.height < 2.5) continue;
 
       // Scoring criteria for windsurfing/sailing
       let score = 0;
       let conditions = '';
 
       // Wind speed scoring (based on sustained wind, not gusts)
-      if (windSpeedKnots >= 20) {
+      if (windSpeed >= 20) {
         score += 40;
         conditions += 'Vent excellent ';
-      } else if (windSpeedKnots >= 15 && windSpeedKnots < 20) {
+      } else if (windSpeed >= 15 && windSpeed < 20) {
         score += 30;
         conditions += 'Vent correct ';
-      } else if (windSpeedKnots >= 12 && windSpeedKnots < 15) {
+      } else if (windSpeed >= 12 && windSpeed < 15) {
         score += 20;
         conditions += 'Vent moyen ';
       }
-
-      // Skip if tide is too low for navigation (minimum 2.5m)
-      if (closestTide.height < 2.5) return;
 
       // Tide height scoring
       if (closestTide.height >= 4.0) {
@@ -123,7 +134,7 @@ export async function GET() {
       }
 
       // Wind direction scoring (prioritize regular sea winds over gusty land winds)
-      const windDir = forecast.windDirection;
+      const windDir = windDirection || 0;
 
       if (windDir >= 225 && windDir <= 315) {
         // SW to NW: sea winds, regular and strong
@@ -145,7 +156,7 @@ export async function GET() {
         conditions += '+ Bon créneau ';
       }
 
-      const windDirectionStr = getWindDirection(forecast.windDirection);
+      const windDirectionStr = getWindDirection(windDir);
 
       sessions.push({
         date: forecastTime.toLocaleDateString('fr-FR'),
@@ -154,13 +165,13 @@ export async function GET() {
           hour: '2-digit',
           minute: '2-digit',
         }),
-        windSpeed: Math.round(windSpeedKnots),
+        windSpeed: Math.round(windSpeed),
         windDirection: windDirectionStr,
         tideHeight: closestTide.height,
         score,
         conditions: conditions.trim(),
       });
-    });
+    }
 
     // Sort by score (best conditions first)
     sessions.sort((a, b) => b.score - a.score);
@@ -177,12 +188,15 @@ export async function GET() {
       .filter((session) => session.date === tomorrowStr)
       .sort((a, b) => b.score - a.score)[0];
 
+    // Calculate total analyzed windows (all daylight hours)
+    const totalAnalyzedWindows = windData.hourly ? windData.hourly.time.length - daylightFiltered : 0;
+
     return NextResponse.json({
       allSessions: sessions.slice(0, 20), // Top 20 sessions
       bestSessions,
       tomorrowBest,
       analysis: {
-        totalWindows: sessions.length,
+        totalWindows: totalAnalyzedWindows, // All daylight hour slots analyzed
         excellentSessions: sessions.filter((s) => s.score >= 80).length,
         goodSessions: sessions.filter((s) => s.score >= 60 && s.score < 80).length,
         averageSessions: sessions.filter((s) => s.score >= 40 && s.score < 60).length,

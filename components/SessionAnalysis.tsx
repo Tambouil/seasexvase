@@ -125,10 +125,9 @@ export async function SessionAnalysis() {
             <div className="text-sm text-orange-800">Sessions moyennes</div>
             <div className="text-xs text-gray-600">(40-59 pts)</div>
           </div>
-          <div className="text-center p-3 bg-blue-50 rounded-lg">
+          <div className="text-center p-3 bg-blue-50 rounded-lg flex flex-col items-center justify-center">
             <div className="text-2xl font-bold text-blue-600">{data.analysis.totalWindows}</div>
-            <div className="text-sm text-blue-800">Total analysé</div>
-            <div className="text-xs text-gray-600">créneaux</div>
+            <div className="text-sm text-blue-800">Créneaux analysés</div>
           </div>
         </div>
 
