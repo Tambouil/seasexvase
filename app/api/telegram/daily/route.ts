@@ -22,7 +22,11 @@ export async function POST() {
 
     // Get session analysis
     const analysisResponse = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/session-analysis`
+      `${
+        process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL
+          ? `https://${process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL}`
+          : 'http://localhost:3000'
+      }/api/session-analysis`
     );
     const analysisData = await analysisResponse.json();
 
