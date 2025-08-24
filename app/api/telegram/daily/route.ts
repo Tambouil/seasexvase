@@ -32,7 +32,7 @@ export async function POST() {
 
     const { tomorrowBest, bestSessions, analysis } = analysisData;
 
-    let message = '🌊 **VaseGuru au 🫡** 🌊\n\n';
+    let message = '🌊 **Rapport météo 🫡** 🌊\n\n';
 
     if (tomorrowBest && tomorrowBest.score >= 80) {
       message += `✅ **EXCELLENTE SESSION DEMAIN !**\n`;
