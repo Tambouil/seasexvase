@@ -60,14 +60,19 @@ export async function GET() {
         }) => {
           const baseDate = new Date(dayData.date);
 
+          // Helper function to create date in Europe/Paris timezone
+          const createParisDate = (timeStr: string) => {
+            const [hours, minutes] = timeStr.split(':');
+            const dateStr = dayData.date + 'T' + String(hours).padStart(2, '0') + ':' + String(minutes).padStart(2, '0') + ':00';
+            // Create date assuming it's in Europe/Paris timezone
+            const utcDate = new Date(dateStr + '+02:00'); // Summer time (CEST)
+            return utcDate;
+          };
+
           // PM matin (Pleine mer matin)
           if (dayData.pm_matin) {
-            const [hours, minutes] = dayData.pm_matin.split(':');
-            const pmMatinDate = new Date(baseDate);
-            pmMatinDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-
             tideEvents.push({
-              time: pmMatinDate.toISOString(),
+              time: createParisDate(dayData.pm_matin).toISOString(),
               height: parseFloat(dayData.pm_matin_haut),
               type: 'high',
             });
@@ -75,12 +80,8 @@ export async function GET() {
 
           // PM soir (Pleine mer soir)
           if (dayData.pm_soir) {
-            const [hours, minutes] = dayData.pm_soir.split(':');
-            const pmSoirDate = new Date(baseDate);
-            pmSoirDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-
             tideEvents.push({
-              time: pmSoirDate.toISOString(),
+              time: createParisDate(dayData.pm_soir).toISOString(),
               height: parseFloat(dayData.pm_soir_haut),
               type: 'high',
             });
@@ -88,12 +89,8 @@ export async function GET() {
 
           // BM matin (Basse mer matin)
           if (dayData.bm_matin) {
-            const [hours, minutes] = dayData.bm_matin.split(':');
-            const bmMatinDate = new Date(baseDate);
-            bmMatinDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-
             tideEvents.push({
-              time: bmMatinDate.toISOString(),
+              time: createParisDate(dayData.bm_matin).toISOString(),
               height: parseFloat(dayData.bm_matin_haut),
               type: 'low',
             });
@@ -101,12 +98,8 @@ export async function GET() {
 
           // BM soir (Basse mer soir)
           if (dayData.bm_soir) {
-            const [hours, minutes] = dayData.bm_soir.split(':');
-            const bmSoirDate = new Date(baseDate);
-            bmSoirDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-
             tideEvents.push({
-              time: bmSoirDate.toISOString(),
+              time: createParisDate(dayData.bm_soir).toISOString(),
               height: parseFloat(dayData.bm_soir_haut),
               type: 'low',
             });
