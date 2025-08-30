@@ -20,8 +20,8 @@ jobs:
 
           echo "Current wind speed: $wind_speed knots"
 
-          # Vérifier si le vent > 15 nœuds
-          if (( $(echo "$wind_speed > 15" | bc -l) )); then
+          # Vérifier si le vent >= 15 nœuds
+          if (( $(echo "$wind_speed >= 15" | bc -l) )); then
             echo "should_notify=true" >> $GITHUB_OUTPUT
             echo "Wind condition met: $wind_speed knots"
           else
